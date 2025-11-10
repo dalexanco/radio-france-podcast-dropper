@@ -1,0 +1,40 @@
+{
+  "name": "france-inter-podcast-dropper",
+  "version": "0.1.0",
+  "description": "A CLI tool to download and manage podcast episodes from France Inter's API",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "fipd": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx watch src/index.tsx",
+    "start": "node dist/index.js",
+    "type-check": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "keywords": [
+    "podcast",
+    "france-inter",
+    "cli",
+    "downloader"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "ink": "^5.0.0",
+    "react": "^18.2.0",
+    "commander": "^11.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "@types/react": "^18.2.45",
+    "tsx": "^4.7.0",
+    "typescript": "^5.3.3"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
+
