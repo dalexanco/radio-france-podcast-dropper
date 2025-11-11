@@ -20,6 +20,7 @@ program
   .command(COMMANDS.INFO)
   .description('Get information about a France Radio emission')
   .option('--format <format>', 'Output format (table|json)', 'table')
+  .option('-o, --output <path>', 'Target directory for downloaded files')
   .argument('<emission-url>', 'France Radio emission URL')
   .action((emissionUrl, options) => {
     render(<Info emissionUrl={emissionUrl} options={options} />);

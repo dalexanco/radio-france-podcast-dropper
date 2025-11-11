@@ -2,16 +2,17 @@ import React from "react";
 import { Text, Box } from "ink";
 import { Emission as EmissionType, DiffusionEdge } from "../../api/graphql.js";
 import Divider from "../../ui/Divider.js";
-import EpisodeLine from "./EpisodeLine.js";
+import SelectableEpisodesList from "./SelectableEpisodesList.js";
 
 interface EmissionProps {
   emission: EmissionType;
   episodes: DiffusionEdge[];
+  downloadPath?: string;
 }
 
 const RELATION_HIDDEN = ["staff"];
 
-const Emission: React.FC<EmissionProps> = ({ emission, episodes }) => {
+const Emission: React.FC<EmissionProps> = ({ emission, episodes, downloadPath }) => {
   return (
     <Box flexDirection="column" padding={1}>
       <Box flexDirection="column" marginBottom={1}>
@@ -95,16 +96,17 @@ const Emission: React.FC<EmissionProps> = ({ emission, episodes }) => {
           </Box>
         )}
 
-        {episodes.length > 0 && (
-          <Box marginTop={1} flexDirection="column">
-            <Text color="green" bold>
-              Latest Episodes ({episodes.length}):
-            </Text>
-            {episodes.map((edge) => (
-              <EpisodeLine key={edge.node.id} episode={edge} />
-            ))}
-          </Box>
-        )}
+        <SelectableEpisodesList 
+          episodes={episodes} 
+          downloadPath={downloadPath}
+          podcastName={emission.title}
+        />
+      </Box>
+      
+      <Box marginTop={2}>
+        <Text color="gray" dimColor>
+          [↑/↓] navigate  [Enter] download  [q] quit
+        </Text>
       </Box>
     </Box>
   );

@@ -1,7 +1,12 @@
-import { Box, Text } from "ink";
+import { Text } from "ink";
 import { DiffusionEdge } from "../../api/graphql.js";
 
-export default function EpisodeLine({ episode }: { episode: DiffusionEdge }) {
+interface EpisodeLineProps {
+  episode: DiffusionEdge;
+  isSelected?: boolean;
+}
+
+export default function EpisodeLine({ episode, isSelected = false }: EpisodeLineProps) {
   const episodeDate = episode.node.published_date
     ? (() => {
         const date = new Date(Number(episode.node.published_date) * 1000);
@@ -13,15 +18,11 @@ export default function EpisodeLine({ episode }: { episode: DiffusionEdge }) {
     : "Unknown";
 
   return (
-    <Box
-      key={episode.node.id}
-      marginLeft={1}
-      flexDirection="column"
-    >
-      <Text>
-        <Text color="gray">{episodeDate}</Text> -{" "}
-        <Text>{episode.node.title}</Text>
+    <Text>
+      <Text color="gray">{episodeDate}</Text> -{" "}
+      <Text color={isSelected ? "cyan" : undefined} bold={isSelected}>
+        {episode.node.title}
       </Text>
-    </Box>
+    </Text>
   );
 }

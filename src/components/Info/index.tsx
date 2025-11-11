@@ -7,6 +7,7 @@ interface InfoProps {
   emissionUrl?: string;
   options?: {
     format?: string;
+    output?: string;
   };
 }
 
@@ -83,7 +84,7 @@ const Info: React.FC<InfoProps> = ({ emissionUrl, options }) => {
   }
 
   // Table format
-  return <EmissionComponent emission={emission} episodes={episodes} />;
+  return <EmissionComponent emission={emission} episodes={episodes} downloadPath={options?.output} />;
 };
 
 export default Info;
