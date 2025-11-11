@@ -12,7 +12,7 @@ const App: React.FC<AppProps> = ({ command, query, emissionId, options }) => {
   return (
     <Box flexDirection="column" padding={1}>
       <Text>
-        <Text color="cyan" bold>France Inter Podcast Dropper</Text>
+        <Text color="cyan" bold>France Radio Podcast Dropper</Text>
       </Text>
       <Box marginTop={1}>
         <Text>
