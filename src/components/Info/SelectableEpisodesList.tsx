@@ -1,20 +1,45 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Box, Text, useInput } from "ink";
-import { DiffusionEdge } from "../../api/graphql.js";
+import { Episode, fetchEpisodes } from "../../data/episodes.js";
 import EpisodeLine from "./EpisodeLine.js";
 import { downloadEpisode } from "../../utils/download.js";
+import { useAsync } from "react-use";
+import { scanOutputDirectory } from "../../utils/scanDownloads.js";
+import { useOptions } from "../../contexts/OptionsContext.js";
+import FutureSwitch from "../FutureSwitch.js";
 
 interface SelectableEpisodesListProps {
-  episodes: DiffusionEdge[];
-  downloadPath?: string;
+  emissionUrl: string;
   podcastName?: string;
 }
 
-const SelectableEpisodesList: React.FC<SelectableEpisodesListProps> = ({ episodes, downloadPath, podcastName }) => {
+const SelectableEpisodesList: React.FC<SelectableEpisodesListProps> = ({
+  podcastName,
+  emissionUrl,
+}) => {
+  const { options } = useOptions();
+  const futureEpisodes = useAsync(() =>
+    fetchEpisodes(emissionUrl, podcastName)
+  );
+  const futureExistingEpisodes = useAsync(() =>
+    scanOutputDirectory(options.output)
+  );
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [downloading, setDownloading] = useState<string | null>(null);
-  const [downloadStatus, setDownloadStatus] = useState<Record<string, "downloading" | "success" | "error">>({});
-  const [downloadPaths, setDownloadPaths] = useState<Record<string, string>>({});
+  const [downloadStatus, setDownloadStatus] = useState<
+    Record<string, "downloading" | "success" | "error" | "existing">
+  >({});
+  const [downloadPaths, setDownloadPaths] = useState<Record<string, string>>(
+    {}
+  );
+  const episodes = futureEpisodes.value || [];
+
+  useEffect(() => {
+    if (!futureExistingEpisodes.value) return;
+    futureExistingEpisodes.value.forEach((episode) => {
+      setDownloadStatus((prev) => ({ ...prev, [episode]: "existing" }));
+    });
+  }, [futureExistingEpisodes.value]);
 
   useInput((input, key) => {
     if (input === "q" || input === "Q") {
@@ -33,65 +58,59 @@ const SelectableEpisodesList: React.FC<SelectableEpisodesListProps> = ({ episode
     }
   });
 
-  const handleDownload = async (episode: DiffusionEdge) => {
-    const episodeId = episode.node.id;
-    setDownloading(episodeId);
-    setDownloadStatus((prev) => ({ ...prev, [episodeId]: "downloading" }));
+  const handleDownload = async (episode: Episode) => {
+    const filePath = episode.podcastFilePath!;
+    setDownloading(filePath);
+    setDownloadStatus((prev) => ({ ...prev, [filePath]: "downloading" }));
 
     try {
-      const filepath = await downloadEpisode(episode, downloadPath, podcastName);
-      setDownloadStatus((prev) => ({ ...prev, [episodeId]: "success" }));
+      const filepath = await downloadEpisode(
+        episode,
+        options.output,
+        podcastName
+      );
+      setDownloadStatus((prev) => ({ ...prev, [filePath]: "success" }));
       if (filepath) {
-        setDownloadPaths((prev) => ({ ...prev, [episodeId]: filepath }));
+        setDownloadPaths((prev) => ({ ...prev, [filePath]: filepath }));
       }
     } catch (error) {
-      setDownloadStatus((prev) => ({ ...prev, [episodeId]: "error" }));
+      setDownloadStatus((prev) => ({ ...prev, [filePath]: "error" }));
     } finally {
       setDownloading(null);
     }
   };
 
-  if (episodes.length === 0) {
-    return null;
-  }
-
   return (
     <Box marginTop={1} flexDirection="column">
-      <Text color="green" bold>
-        Latest Episodes ({episodes.length}):
-      </Text>
-      <Text color="gray" dimColor>
-        Use ↑/↓ to navigate, Enter to download, [q] to quit
-      </Text>
-      {episodes.map((edge, index) => {
-        const isSelected = index === selectedIndex;
-        const status = downloadStatus[edge.node.id];
-        return (
-          <Box key={edge.node.id} marginLeft={1} marginTop={0}>
-            <Text>
-              {isSelected ? <Text color="cyan">▶ </Text> : <Text>  </Text>}
-              <EpisodeLine episode={edge} isSelected={isSelected} />
-              {status === "downloading" && (
-                <Text color="yellow"> [Downloading...]</Text>
-              )}
-              {status === "error" && (
-                <Text color="red"> [Error]</Text>
-              )}
-            </Text>
+      <FutureSwitch asyncState={futureEpisodes}>
+        <Text color="green" bold>
+          Latest Episodes ({futureEpisodes.value?.length || 0}):
+        </Text>
+        {futureEpisodes.value?.map((episode, index) => {
+          const isSelected = index === selectedIndex;
+          const status = downloadStatus[episode.podcastFilePath!];
+          return (
+            <Box key={episode.id} marginLeft={1} marginTop={0}>
+              <Text>
+                {isSelected ? <Text color="cyan">▸ </Text> : <Text> </Text>}
+                <EpisodeLine
+                  episode={episode}
+                  isSelected={isSelected}
+                  status={status}
+                />
+              </Text>
+            </Box>
+          );
+        })}
+      </FutureSwitch>
 
-            {status === "success" && (
-                <Box flexDirection="column">
-                  <Text color="green"> [Downloaded]</Text>
-                  <Text color="gray"> {downloadPaths[edge.node.id]}</Text>
-                </Box>
-              )}
-          </Box>
-          
-        );
-      })}
+      <Box marginTop={2}>
+        <Text color="gray" dimColor>
+          [↑/↓] navigate [Enter] download [q] quit
+        </Text>
+      </Box>
     </Box>
   );
 };
 
 export default SelectableEpisodesList;
-

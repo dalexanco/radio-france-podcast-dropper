@@ -1,9 +1,10 @@
 import fetch from "node-fetch";
 import { writeFile, mkdir } from "fs/promises";
-import { join } from "path";
-import { DiffusionEdge } from "../api/graphql.js";
+import { join, dirname } from "path";
+import { Episode } from "../data/episodes.js";
 import { HttpProxyAgent } from "http-proxy-agent";
 import { HttpsProxyAgent } from "https-proxy-agent";
+import { sanitizeFilename } from "./sanitize.js";
 
 const HTTP_PROXY = process.env.HTTP_PROXY || process.env.http_proxy;
 const HTTPS_PROXY = process.env.HTTPS_PROXY || process.env.https_proxy;
@@ -32,49 +33,54 @@ const getProxyAgent = (url: string) => {
     : new HttpProxyAgent(proxyUrl);
 };
 
+/**
+ * Generates a filepath for an episode based on its metadata.
+ * @param episode - The episode to generate a filepath for
+ * @param targetPath - Optional target directory (defaults to "downloads" in current working directory)
+ * @param podcastName - Optional podcast name for folder structure (defaults to "unknown-podcast")
+ * @returns The full filepath where the episode should be saved
+ */
+export function getEpisodeFilePath(
+  episode: Episode,
+  podcastName?: string
+): string {
+  // Sanitize podcast name for folder name
+  const podcastDir = podcastName
+    ? sanitizeFilename(podcastName, 100)
+    : "unknown-podcast";
+
+  // Generate filename from episode title and date
+  const dateStr = episode.podcastPublishedDate
+    ? new Date(Number(episode.podcastPublishedDate) * 1000).toISOString().split("T")[0]
+    : "unknown";
+  const sanitizedTitle = sanitizeFilename(episode.title, 80);
+  const filename = `${dateStr}-${sanitizedTitle}.mp3`;
+  
+  return join(podcastDir, filename);
+}
+
 export async function downloadEpisode(
-  episode: DiffusionEdge,
+  episode: Episode,
   targetPath?: string,
   podcastName?: string
 ): Promise<string> {
-  // Try podcastEpisode.url first, then playerUrl as fallback
-  const mp3Url = episode.node.podcastEpisode?.url || episode.node.podcastEpisode?.playerUrl;
+  // Try podcastUrl first, then podcastPlayerUrl as fallback
+  const mp3Url = episode.podcastUrl || episode.podcastPlayerUrl;
   
   if (!mp3Url) {
     throw new Error("No MP3 URL available for this episode");
   }
 
-  // Use provided target path or default to "downloads" in current working directory
+  // Generate filepath for the episode
   const baseDownloadsDir = targetPath 
     ? targetPath 
     : join(process.cwd(), "downloads");
-
-  // Sanitize podcast name for folder name
-  const sanitizedPodcastName = podcastName
-    ? podcastName
-        .replace(/[^a-z0-9]/gi, "-")
-        .toLowerCase()
-        .replace(/-+/g, "-")
-        .replace(/^-|-$/g, "")
-        .substring(0, 100)
-    : "unknown-podcast";
-
+  const podcastPath = getEpisodeFilePath(episode, podcastName);
+  const filepath = join(baseDownloadsDir, podcastPath);
+  
   // Create podcast-specific directory
-  const podcastDir = join(baseDownloadsDir, sanitizedPodcastName);
+  const podcastDir = dirname(filepath);
   await mkdir(podcastDir, { recursive: true });
-
-  // Generate filename from episode title and date
-  const dateStr = episode.node.published_date
-    ? new Date(Number(episode.node.published_date) * 1000).toISOString().split("T")[0]
-    : "unknown";
-  const sanitizedTitle = episode.node.title
-    .replace(/[^a-z0-9]/gi, "-")
-    .toLowerCase()
-    .replace(/-+/g, "-")
-    .replace(/^-|-$/g, "")
-    .substring(0, 80);
-  const filename = `${dateStr}_${sanitizedTitle}.mp3`;
-  const filepath = join(podcastDir, filename);
 
   // Download the file
   const agent = getProxyAgent(mp3Url);

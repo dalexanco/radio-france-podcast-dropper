@@ -1,15 +1,37 @@
 import { Text } from "ink";
-import { DiffusionEdge } from "../../api/graphql.js";
+import { Episode } from "../../data/episodes.js";
+
+type EpisodeStatus = "downloading" | "success" | "error" | "existing";
 
 interface EpisodeLineProps {
-  episode: DiffusionEdge;
+  episode: Episode;
   isSelected?: boolean;
+  status: EpisodeStatus;
 }
 
-export default function EpisodeLine({ episode, isSelected = false }: EpisodeLineProps) {
-  const episodeDate = episode.node.published_date
+const EpisodeStatus = ({
+  status,
+}: {
+  status: EpisodeStatus;
+}) => {
+  switch (status) {
+    case "downloading":
+      return <Text color="yellow">[Downloading...]</Text>;
+    case "success":
+      return <Text color="green">[Downloaded]</Text>;
+    case "existing":
+      return <Text color="blue">[Existing]</Text>;
+    case "error":
+      return <Text color="red">[Error]</Text>;
+    default:
+      return null;
+  }
+};
+
+export default function EpisodeLine({ episode, isSelected = false, status }: EpisodeLineProps) {
+  const episodeDate = episode.podcastPublishedDate
     ? (() => {
-        const date = new Date(Number(episode.node.published_date) * 1000);
+        const date = new Date(Number(episode.podcastPublishedDate) * 1000);
         const year = date.getFullYear();
         const month = String(date.getMonth() + 1).padStart(2, "0");
         const day = String(date.getDate()).padStart(2, "0");
@@ -20,8 +42,9 @@ export default function EpisodeLine({ episode, isSelected = false }: EpisodeLine
   return (
     <Text>
       <Text color="gray">{episodeDate}</Text> -{" "}
+      <EpisodeStatus status={status} />{" "}
       <Text color={isSelected ? "cyan" : undefined} bold={isSelected}>
-        {episode.node.title}
+        {episode.title}
       </Text>
     </Text>
   );

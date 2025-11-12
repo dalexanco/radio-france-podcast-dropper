@@ -4,6 +4,7 @@ import React from 'react';
 import { render } from 'ink';
 import { Command } from 'commander';
 import Info from './components/Info/index.js';
+import { OptionsProvider } from './contexts/OptionsContext.js';
 
 const program = new Command();
 
@@ -23,7 +24,11 @@ program
   .option('-o, --output <path>', 'Target directory for downloaded files')
   .argument('<emission-url>', 'France Radio emission URL')
   .action((emissionUrl, options) => {
-    render(<Info emissionUrl={emissionUrl} options={options} />);
+    render(
+      <OptionsProvider options={options}>
+        <Info emissionUrl={emissionUrl} />
+      </OptionsProvider>
+    );
   });
 
 program.parse();

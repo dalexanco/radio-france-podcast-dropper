@@ -1,5 +1,6 @@
 import React from 'react';
 import { Text, Box } from 'ink';
+import ErrorBoundary from '../ErrorBoundary.js';
 
 interface AppProps {
   command?: string;
@@ -10,7 +11,8 @@ interface AppProps {
 
 const App: React.FC<AppProps> = ({ command, query, emissionId, options }) => {
   return (
-    <Box flexDirection="column" padding={1}>
+    <ErrorBoundary fallback={<Text>Error: something went wrong</Text>}>
+ <Box flexDirection="column" padding={1}>
       <Text>
         <Text color="cyan" bold>France Radio Podcast Dropper</Text>
       </Text>
@@ -33,6 +35,8 @@ const App: React.FC<AppProps> = ({ command, query, emissionId, options }) => {
         <Text color="yellow">🚧 This feature is under development</Text>
       </Box>
     </Box>
+    </ErrorBoundary>
+   
   );
 };
 

@@ -59,6 +59,12 @@ export interface DiffusionEdge {
   node: DiffusionNode;
 }
 
+
+export interface LocalDiffusionEdge extends DiffusionEdge {
+  status: "existing" | "downloading" | "success" | "error";
+  filepath?: string;
+}
+
 export interface Emission {
   id: string;
   title: string;

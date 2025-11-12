@@ -26,18 +26,19 @@
     "commander": "^11.1.0",
     "dotenv": "^17.2.3",
     "graphql": "^16.12.0",
-    "graphql-request": "^7.3.2",
+    "graphql-request": "^7.3.3",
     "http-proxy-agent": "^7.0.2",
     "https-proxy-agent": "^7.0.6",
-    "ink": "^5.0.0",
+    "ink": "^6.5.0",
     "node-fetch": "^2.7.0",
-    "react": "^18.2.0"
+    "react": "^19.2.0",
+    "react-use": "^17.6.0"
   },
   "devDependencies": {
-    "@types/node": "^20.10.0",
+    "@types/node": "^20.19.25",
     "@types/node-fetch": "^2.6.13",
-    "@types/react": "^18.2.45",
-    "typescript": "^5.3.3"
+    "@types/react": "^19.2.4",
+    "typescript": "^5.9.3"
   },
   "engines": {
     "bun": ">=1.0.0"
