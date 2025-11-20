@@ -1,6 +1,8 @@
 import { getEpisodeFilePath } from "../utils/download";
+import { scanOutputDirectory } from "../utils/scanDownloads";
 import { fetchEpisodesByUrl } from "./graphql";
 
+export type EpisodePodcastStatus = "available" | "existing";
 export interface Episode {
   id: string;
   title: string;
@@ -9,14 +11,17 @@ export interface Episode {
   pageUrl?: string;
   podcastPlayerUrl?: string;
   podcastFilePath?: string;
+  podcastStatus?: EpisodePodcastStatus;
 }
 
 export async function fetchEpisodes(
   url: string,
-  podcastName: string | undefined = undefined,
+  podcastName: string,
+  outputPath: string,
   first: number = 10
 ): Promise<Episode[]> {
   const data = await fetchEpisodesByUrl(url, first);
+  const existingEpisodes = await scanOutputDirectory(outputPath);
 
   return data
     .filter(
@@ -35,9 +40,12 @@ export async function fetchEpisodes(
         pageUrl: edge.node.url,
         podcastPlayerUrl: edge.node.podcastEpisode?.playerUrl || "",
       };
-      if (podcastName) { 
+      if (podcastName) {
         episode.podcastFilePath = getEpisodeFilePath(episode, podcastName);
+        const hasFile = existingEpisodes.includes(episode.podcastFilePath!);
+        episode.podcastStatus = hasFile ? "existing" : "available";
       }
       return episode;
     });
 }
+

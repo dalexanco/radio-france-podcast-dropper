@@ -1,34 +1,26 @@
 import { Text } from "ink";
-import { Episode } from "../../data/episodes.js";
-
-type EpisodeStatus = "downloading" | "success" | "error" | "existing";
+import { Episode, EpisodePodcastStatus } from "../../data/episodes.js";
 
 interface EpisodeLineProps {
   episode: Episode;
-  isSelected?: boolean;
-  status: EpisodeStatus;
 }
 
 const EpisodeStatus = ({
   status,
 }: {
-  status: EpisodeStatus;
+  status?: EpisodePodcastStatus;
 }) => {
   switch (status) {
-    case "downloading":
-      return <Text color="yellow">[Downloading...]</Text>;
-    case "success":
-      return <Text color="green">[Downloaded]</Text>;
+    case "available":
+      return <Text color="gray">[Available]</Text>;
     case "existing":
       return <Text color="blue">[Existing]</Text>;
-    case "error":
-      return <Text color="red">[Error]</Text>;
     default:
-      return null;
+      return "unknown";
   }
 };
 
-export default function EpisodeLine({ episode, isSelected = false, status }: EpisodeLineProps) {
+export default function EpisodeLine({ episode }: EpisodeLineProps) {
   const episodeDate = episode.podcastPublishedDate
     ? (() => {
         const date = new Date(Number(episode.podcastPublishedDate) * 1000);
@@ -42,8 +34,8 @@ export default function EpisodeLine({ episode, isSelected = false, status }: Epi
   return (
     <Text>
       <Text color="gray">{episodeDate}</Text> -{" "}
-      <EpisodeStatus status={status} />{" "}
-      <Text color={isSelected ? "cyan" : undefined} bold={isSelected}>
+      <EpisodeStatus status={episode.podcastStatus} />{" "}
+      <Text>
         {episode.title}
       </Text>
     </Text>
