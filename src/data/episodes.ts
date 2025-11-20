@@ -19,16 +19,16 @@ export async function fetchEpisodes(
   url: string,
   podcastName: string,
   outputPath: string,
-  first: number = 10
+  count: number
 ): Promise<Episode[]> {
   try {
     const startTime = Date.now();
 
     logger.debug(
-      { url, podcastName, outputPath, first },
+      { url, podcastName, outputPath, first: count },
       "#fetchEpisodes Fetching episodes"
     );
-    const data = await fetchEpisodesByUrl(url, first);
+    const data = await fetchEpisodesByUrl(url, count);
     logger.debug(
       { data: data.length },
       "#fetchEpisodes Fetched episodes from GraphQL API"
@@ -95,7 +95,7 @@ export async function fetchEpisodes(
       url,
       podcastName,
       outputPath,
-      first,
+      first: count,
     });
     throw error;
   }

@@ -4,7 +4,7 @@ import React from 'react';
 import { render } from 'ink';
 import { Command } from 'commander';
 import Info from './components/Info/index.js';
-import { OptionsProvider, defaultOptions } from './contexts/OptionsContext.js';
+import { Options, OptionsProvider, defaultOptions } from './contexts/OptionsContext.js';
 import { setVerboseMode } from './utils/logger.js';
 
 const program = new Command();
@@ -22,11 +22,12 @@ program
   .command(COMMANDS.INFO)
   .description('Get information about a France Radio emission')
   .option('--format <format>', 'Output format (table|json)', 'table')
+  .option('-c, --count <count>', 'Number of episodes to fetch', Number.parseInt, 10)
   .option('-o, --output <path>', 'Target directory for downloaded files')
   .option('-v, --verbose', 'Enable verbose mode with detailed logging', false)
   .argument('<emission-url>', 'France Radio emission URL')
   .action(async (emissionUrl, rawOptions) => {
-    const options = { ...defaultOptions, ...rawOptions };
+    const options: Options = { ...defaultOptions, ...rawOptions } as Options;
     
     // Set global verbose mode for non-React contexts
     setVerboseMode(options.verbose);

@@ -322,13 +322,13 @@ export async function fetchShowByUrl(url: string): Promise<Emission | null> {
 
 export async function fetchEpisodesByUrl(
   url: string,
-  first: number = 10
+  count: number
 ): Promise<DiffusionEdge[]> {
   logger.debug(
     {
       query: "GetDiffusionsByUrl",
       url,
-      first,
+      count,
     },
     "#fetchEpisodesByUrl Fetching episodes by URL"
   );
@@ -336,14 +336,14 @@ export async function fetchEpisodesByUrl(
     const startTime = Date.now();
     const data = await client.request<DiffusionsByUrlResponse>(
       DIFFUSIONS_BY_URL_QUERY,
-      { url, first }
+      { url, first: count }
     );
     const duration = Date.now() - startTime;
     const edges = data.diffusionsOfShowByUrl.edges;
     logger.debug(
       {
         url,
-        requested: first,
+        requested: count,
         received: edges.length,
         duration: `${duration}ms`,
       },
@@ -354,7 +354,7 @@ export async function fetchEpisodesByUrl(
     logger.error("#fetchEpisodesByUrl Failed to fetch episodes by URL", error, {
       query: "GetDiffusionsByUrl",
       url,
-      first,
+      count,
     });
     throw error;
   }

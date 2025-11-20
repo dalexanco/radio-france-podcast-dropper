@@ -27,7 +27,8 @@ const Info: React.FC<InfoProps> = ({ emissionUrl }) => {
     const episodes = await fetchEpisodes(
       emissionUrl,
       podcastName,
-      options.output
+      options.output,
+      options.count
     );
     return { show, episodes };
   }, []);

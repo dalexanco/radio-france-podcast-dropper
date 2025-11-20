@@ -3,7 +3,8 @@ import React, { createContext, useContext } from "react";
 export interface Options {
   format: string;
   output: string;
-  verbose?: boolean;
+  verbose: boolean;
+  count: number;
 }
 
 interface OptionsContextValue {
@@ -14,6 +15,7 @@ export const defaultOptions: Options = {
   format: "table",
   output: "downloads",
   verbose: false,
+  count: 10,
 };
 
 const OptionsContext = createContext<OptionsContextValue>({
