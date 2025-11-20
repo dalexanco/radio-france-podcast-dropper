@@ -3,17 +3,21 @@ import React, { createContext, useContext } from "react";
 export interface Options {
   format: string;
   output: string;
+  verbose?: boolean;
 }
 
 interface OptionsContextValue {
   options: Options;
 }
 
+export const defaultOptions: Options = {
+  format: "table",
+  output: "downloads",
+  verbose: false,
+};
+
 const OptionsContext = createContext<OptionsContextValue>({
-  options: {
-    format: "table",
-    output: "downloads",
-  },
+  options: defaultOptions,
 });
 
 export interface OptionsProviderProps {

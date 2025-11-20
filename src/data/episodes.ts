@@ -1,6 +1,7 @@
 import { getEpisodeFilePath } from "../utils/download";
 import { scanOutputDirectory } from "../utils/scanDownloads";
 import { fetchEpisodesByUrl } from "./graphql";
+import { logger } from "../utils/logger";
 
 export type EpisodePodcastStatus = "available" | "existing";
 export interface Episode {
@@ -20,32 +21,82 @@ export async function fetchEpisodes(
   outputPath: string,
   first: number = 10
 ): Promise<Episode[]> {
-  const data = await fetchEpisodesByUrl(url, first);
-  const existingEpisodes = await scanOutputDirectory(outputPath);
+  try {
+    const startTime = Date.now();
 
-  return data
-    .filter(
-      (edge) =>
-        edge.node.title !== null &&
-        edge.node.podcastEpisode !== null &&
-        edge.node.podcastEpisode?.url !== null &&
-        edge.node.published_date !== null
-    )
-    .map((edge) => {
-      const episode: Episode = {
-        id: edge.node.id,
-        title: edge.node.title,
-        podcastUrl: edge.node.podcastEpisode?.url || "",
-        podcastPublishedDate: edge.node.published_date || "",
-        pageUrl: edge.node.url,
-        podcastPlayerUrl: edge.node.podcastEpisode?.playerUrl || "",
-      };
-      if (podcastName) {
-        episode.podcastFilePath = getEpisodeFilePath(episode, podcastName);
-        const hasFile = existingEpisodes.includes(episode.podcastFilePath!);
-        episode.podcastStatus = hasFile ? "existing" : "available";
-      }
-      return episode;
+    logger.debug(
+      { url, podcastName, outputPath, first },
+      "#fetchEpisodes Fetching episodes"
+    );
+    const data = await fetchEpisodesByUrl(url, first);
+    logger.debug(
+      { data: data.length },
+      "#fetchEpisodes Fetched episodes from GraphQL API"
+    );
+
+    logger.debug(
+      { outputPath },
+      "#fetchEpisodes Scanning output directory for existing episodes"
+    );
+    const existingEpisodes = await scanOutputDirectory(outputPath);
+    logger.debug(
+      { count: existingEpisodes.length },
+      "#fetchEpisodes Found existing episode files"
+    );
+
+    const episodes = data
+      .filter(
+        (edge) =>
+          edge.node.title !== null &&
+          edge.node.podcastEpisode !== null &&
+          edge.node.podcastEpisode?.url !== null &&
+          edge.node.published_date !== null
+      )
+      .map((edge) => {
+        const episode: Episode = {
+          id: edge.node.id,
+          title: edge.node.title,
+          podcastUrl: edge.node.podcastEpisode?.url || "",
+          podcastPublishedDate: edge.node.published_date || "",
+          pageUrl: edge.node.url,
+          podcastPlayerUrl: edge.node.podcastEpisode?.playerUrl || "",
+        };
+        if (podcastName) {
+          episode.podcastFilePath = getEpisodeFilePath(episode, podcastName);
+          const hasFile = existingEpisodes.includes(episode.podcastFilePath!);
+          episode.podcastStatus = hasFile ? "existing" : "available";
+        }
+        return episode;
+      });
+
+    const duration = Date.now() - startTime;
+    const existingCount = episodes.filter(
+      (e) => e.podcastStatus === "existing"
+    ).length;
+    const availableCount = episodes.filter(
+      (e) => e.podcastStatus === "available"
+    ).length;
+
+    logger.debug(
+      {
+        url,
+        podcastName,
+        total: episodes.length,
+        existing: existingCount,
+        available: availableCount,
+        duration: `${duration}ms`,
+      },
+      "#fetchEpisodes Fetch episodes succeeded"
+    );
+
+    return episodes;
+  } catch (error) {
+    logger.error("#fetchEpisodes Failed to fetch episodes", error, {
+      url,
+      podcastName,
+      outputPath,
+      first,
     });
+    throw error;
+  }
 }
-

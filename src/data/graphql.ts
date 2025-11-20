@@ -1,7 +1,8 @@
-import { GraphQLClient } from 'graphql-request';
-import fetch from 'node-fetch';
-import { HttpProxyAgent } from 'http-proxy-agent';
-import { HttpsProxyAgent } from 'https-proxy-agent';
+import { GraphQLClient } from "graphql-request";
+import fetch from "node-fetch";
+import { HttpProxyAgent } from "http-proxy-agent";
+import { HttpsProxyAgent } from "https-proxy-agent";
+import { logger } from "../utils/logger.js";
 
 export interface Brand {
   id: string;
@@ -59,7 +60,6 @@ export interface DiffusionEdge {
   node: DiffusionNode;
 }
 
-
 export interface LocalDiffusionEdge extends DiffusionEdge {
   status: "existing" | "downloading" | "success" | "error";
   filepath?: string;
@@ -82,7 +82,8 @@ export interface Emission {
   };
 }
 
-const GRAPHQL_URI = process.env.GRAPHQL_URI || 'https://openapi.radiofrance.fr/v1/graphql';
+const GRAPHQL_URI =
+  process.env.GRAPHQL_URI || "https://openapi.radiofrance.fr/v1/graphql";
 const GRAPHQL_TOKEN = process.env.GRAPHQL_TOKEN!;
 const HTTP_PROXY = process.env.HTTP_PROXY || process.env.http_proxy;
 const HTTPS_PROXY = process.env.HTTPS_PROXY || process.env.https_proxy;
@@ -90,7 +91,7 @@ const HTTPS_PROXY = process.env.HTTPS_PROXY || process.env.https_proxy;
 // Normalize proxy URL - add http:// if protocol is missing
 const normalizeProxyUrl = (url: string | undefined): string | undefined => {
   if (!url) return undefined;
-  if (url.startsWith('http://') || url.startsWith('https://')) {
+  if (url.startsWith("http://") || url.startsWith("https://")) {
     return url;
   }
   return `http://${url}`;
@@ -98,32 +99,44 @@ const normalizeProxyUrl = (url: string | undefined): string | undefined => {
 
 // Create proxy agent if proxy is configured
 const getProxyAgent = () => {
-  const proxyUrl = GRAPHQL_URI.startsWith('https://') 
+  const proxyUrl = GRAPHQL_URI.startsWith("https://")
     ? normalizeProxyUrl(HTTPS_PROXY || HTTP_PROXY)
     : normalizeProxyUrl(HTTP_PROXY);
-  
+
   if (!proxyUrl) {
     return undefined;
   }
 
-  return GRAPHQL_URI.startsWith('https://')
+  return GRAPHQL_URI.startsWith("https://")
     ? new HttpsProxyAgent(proxyUrl)
     : new HttpProxyAgent(proxyUrl);
 };
 
 const customFetch = (url: string | URL | Request, options?: RequestInit) => {
   const agent = getProxyAgent();
-  return fetch(url as any, {
-    ...options,
-    agent,
-  } as any) as any;
+  logger.debug(
+    {
+      method: options?.method || "GET",
+      hasProxy: !!agent,
+      hasHeaders: !!options?.headers,
+    },
+    `Making HTTP request to: ${url}`
+  );
+  return fetch(
+    url as any,
+    {
+      ...options,
+      agent,
+    } as any
+  ) as any;
 };
 
 const client = new GraphQLClient(GRAPHQL_URI, {
   headers: {
-    'x-token': GRAPHQL_TOKEN,
+    "x-token": GRAPHQL_TOKEN,
   },
   fetch: customFetch as any,
+  errorPolicy: "all",
 });
 
 const BRANDS_QUERY = `
@@ -227,21 +240,122 @@ interface DiffusionsByUrlResponse {
 }
 
 export async function fetchBrands(): Promise<Brand[]> {
-  const data = await client.request<BrandsResponse>(BRANDS_QUERY);
-  return data.brands;
+  logger.debug({ query: "GetBrands" }, "#fetchBrands Fetching brands");
+  try {
+    const startTime = Date.now();
+    const data = await client.request<BrandsResponse>(BRANDS_QUERY);
+    const duration = Date.now() - startTime;
+    logger.debug(
+      {
+        count: data.brands.length,
+        duration: `${duration}ms`,
+      },
+      "#fetchBrands Fetch brands succeeded"
+    );
+    return data.brands;
+  } catch (error) {
+    logger.error("#fetchBrands Failed to fetch brands", error, {
+      query: "GetBrands",
+    });
+    throw error;
+  }
 }
 
 export async function fetchThemes(brandId: string): Promise<Theme[]> {
-  const data = await client.request<ThemesResponse>(THEMES_QUERY, { brandId });
-  return data.brand?.themes || [];
+  logger.debug({ query: "GetThemes", brandId }, "#fetchThemes Fetching themes");
+  try {
+    const startTime = Date.now();
+    const data = await client.request<ThemesResponse>(THEMES_QUERY, {
+      brandId,
+    });
+    const duration = Date.now() - startTime;
+    const themes = data.brand?.themes || [];
+    logger.debug(
+      {
+        brandId,
+        count: themes.length,
+        duration: `${duration}ms`,
+      },
+      "#fetchThemes Fetch themes succeeded"
+    );
+    return themes;
+  } catch (error) {
+    logger.error("#fetchThemes Failed to fetch themes", error, {
+      query: "GetThemes",
+      brandId,
+    });
+    throw error;
+  }
 }
 
 export async function fetchShowByUrl(url: string): Promise<Emission | null> {
-  const data = await client.request<ShowByUrlResponse>(SHOW_BY_URL_QUERY, { url });
-  return data.showByUrl;
+  logger.debug(
+    { query: "GetShowByUrl", url },
+    "#fetchShowByUrl Fetching show by URL"
+  );
+  try {
+    const startTime = Date.now();
+    const data = await client.request<ShowByUrlResponse>(SHOW_BY_URL_QUERY, {
+      url,
+    });
+    const duration = Date.now() - startTime;
+    const show = data.showByUrl;
+    logger.debug(
+      {
+        url,
+        found: !!show,
+        showId: show?.id,
+        showTitle: show?.title,
+        duration: `${duration}ms`,
+      },
+      "#fetchShowByUrl Fetch show by URL succeeded"
+    );
+    return show;
+  } catch (error) {
+    logger.error("#fetchShowByUrl Failed to fetch show by URL", error, {
+      query: "GetShowByUrl",
+      url,
+    });
+    throw error;
+  }
 }
 
-export async function fetchEpisodesByUrl(url: string, first: number = 10): Promise<DiffusionEdge[]> {
-  const data = await client.request<DiffusionsByUrlResponse>(DIFFUSIONS_BY_URL_QUERY, { url, first });
-  return data.diffusionsOfShowByUrl.edges;
+export async function fetchEpisodesByUrl(
+  url: string,
+  first: number = 10
+): Promise<DiffusionEdge[]> {
+  logger.debug(
+    {
+      query: "GetDiffusionsByUrl",
+      url,
+      first,
+    },
+    "#fetchEpisodesByUrl Fetching episodes by URL"
+  );
+  try {
+    const startTime = Date.now();
+    const data = await client.request<DiffusionsByUrlResponse>(
+      DIFFUSIONS_BY_URL_QUERY,
+      { url, first }
+    );
+    const duration = Date.now() - startTime;
+    const edges = data.diffusionsOfShowByUrl.edges;
+    logger.debug(
+      {
+        url,
+        requested: first,
+        received: edges.length,
+        duration: `${duration}ms`,
+      },
+      "#fetchEpisodesByUrl Fetch episodes by URL succeeded"
+    );
+    return edges;
+  } catch (error) {
+    logger.error("#fetchEpisodesByUrl Failed to fetch episodes by URL", error, {
+      query: "GetDiffusionsByUrl",
+      url,
+      first,
+    });
+    throw error;
+  }
 }

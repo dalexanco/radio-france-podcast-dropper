@@ -1,5 +1,6 @@
 import { readdir, stat } from "fs/promises";
 import { join } from "path";
+import { logger } from "./logger";
 
 /**
  * Checks if a path exists and is a directory.
@@ -89,7 +90,7 @@ async function processPodcastDirectory(
   const entries = await Promise.all(
     files.map((file, index) => processFile(file, filePaths[index], podcastName))
   );
-  return entries.filter((entry) => entry !== null)
+  return entries.filter((entry) => entry !== null);
 }
 
 /**
