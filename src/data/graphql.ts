@@ -27,7 +27,7 @@ export interface TaxonomyNode {
 export interface TaxonomyEdge {
   relation: string;
   info?: string;
-  node: TaxonomyNode;
+  node?: TaxonomyNode;
 }
 
 export interface PersonalityNode {
@@ -38,7 +38,7 @@ export interface PersonalityNode {
 export interface PersonalityEdge {
   relation: string;
   info?: string;
-  node: PersonalityNode;
+  node?: PersonalityNode;
 }
 
 export interface PodcastEpisode {
@@ -57,7 +57,7 @@ export interface DiffusionNode {
 
 export interface DiffusionEdge {
   cursor: string;
-  node: DiffusionNode;
+  node?: DiffusionNode;
 }
 
 export interface LocalDiffusionEdge extends DiffusionEdge {

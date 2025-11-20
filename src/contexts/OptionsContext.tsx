@@ -5,6 +5,7 @@ export interface Options {
   output: string;
   verbose: boolean;
   count: number;
+  config?: string;
 }
 
 interface OptionsContextValue {

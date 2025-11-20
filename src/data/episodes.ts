@@ -47,19 +47,21 @@ export async function fetchEpisodes(
     const episodes = data
       .filter(
         (edge) =>
+          edge.node &&
           edge.node.title !== null &&
           edge.node.podcastEpisode !== null &&
           edge.node.podcastEpisode?.url !== null &&
           edge.node.published_date !== null
       )
       .map((edge) => {
+        const node = edge.node!; // Safe after filter
         const episode: Episode = {
-          id: edge.node.id,
-          title: edge.node.title,
-          podcastUrl: edge.node.podcastEpisode?.url || "",
-          podcastPublishedDate: edge.node.published_date || "",
-          pageUrl: edge.node.url,
-          podcastPlayerUrl: edge.node.podcastEpisode?.playerUrl || "",
+          id: node.id,
+          title: node.title,
+          podcastUrl: node.podcastEpisode?.url || "",
+          podcastPublishedDate: node.published_date || "",
+          pageUrl: node.url,
+          podcastPlayerUrl: node.podcastEpisode?.playerUrl || "",
         };
         if (podcastName) {
           episode.podcastFilePath = getEpisodeFilePath(episode, podcastName);

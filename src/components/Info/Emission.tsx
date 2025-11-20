@@ -37,9 +37,10 @@ const Emission: React.FC<EmissionProps> = ({ emission, downloadPath }) => {
             </Text>
             <Text color="gray">
               {emission.personalitiesConnection.edges
+                .filter((edge) => edge.node?.name)
                 .map(
                   (edge) =>
-                    `${edge.node.name}` +
+                    `${edge.node!.name}` +
                     (edge.relation &&
                     !RELATION_HIDDEN.includes(edge.relation.toLowerCase())
                       ? ` (${edge.relation})`
@@ -58,7 +59,8 @@ const Emission: React.FC<EmissionProps> = ({ emission, downloadPath }) => {
             </Text>
             <Text color="gray">
               {emission.taxonomiesConnection.edges
-                .map((edge) => edge.node.title)
+                .filter((edge) => edge.node?.title)
+                .map((edge) => edge.node!.title)
                 .join(" / ")}
             </Text>
           </Box>

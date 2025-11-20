@@ -1,0 +1,9 @@
+emissions:
+  - url: https://www.radiofrance.fr/franceinter/podcasts/les-odyssees
+    count: 8
+  - url: https://www.radiofrance.fr/franceinter/podcasts/bestioles
+    count: 8
+  - url: https://www.radiofrance.fr/franceinter/podcasts/les-explorateurs-de-l-univers
+    count: 8
+  - url: https://www.radiofrance.fr/francebleu/podcasts/le-confin-des-contes-8947704
+    count: 10

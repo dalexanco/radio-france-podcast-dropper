@@ -1,5 +1,5 @@
 import { readdir, stat } from "fs/promises";
-import { join } from "path";
+import { join, isAbsolute } from "path";
 import { logger } from "./logger";
 
 /**
@@ -101,7 +101,10 @@ async function processPodcastDirectory(
 export async function scanOutputDirectory(
   outputPath: string
 ): Promise<string[]> {
-  const baseOutputDir = join(process.cwd(), outputPath);
+  // Handle both absolute and relative paths
+  const baseOutputDir = isAbsolute(outputPath)
+    ? outputPath
+    : join(process.cwd(), outputPath);
 
   // Check if the directory exists
   if (!(await isDirectory(baseOutputDir))) {

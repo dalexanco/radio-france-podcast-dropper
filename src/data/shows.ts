@@ -43,10 +43,7 @@ export async function fetchShow(url: string): Promise<Show | null> {
 
     logger.debug(
       {
-        id: emission.id,
-        title: emission.title,
-        hasPersonalities: !!emission.personalitiesConnection,
-        hasTaxonomies: !!emission.taxonomiesConnection,
+        response: JSON.stringify(emission, null, 2),
       },
       "#fetchShow Processing emission data"
     );
@@ -54,15 +51,17 @@ export async function fetchShow(url: string): Promise<Show | null> {
     // Extract personalities
     const personalities =
       emission.personalitiesConnection?.edges
-        .filter((edge) => edge.node.name)
+        .filter((edge) => edge.node?.name)
         .map((edge) => ({
-          name: edge.node.name,
+          name: edge.node!.name,
           relation: edge.relation,
         })) || [];
 
     // Extract taxonomies
     const taxonomies =
-      emission.taxonomiesConnection?.edges.map((edge) => edge.node.title) || [];
+      emission.taxonomiesConnection?.edges
+        .filter((edge) => edge.node?.title)
+        .map((edge) => edge.node!.title) || [];
 
     const show = {
       id: emission.id,
